@@ -23,6 +23,7 @@ export interface EventDocument extends EventAttrs, Document {
   updatedAt: Date;
 }
 
+// EventDocument → one event, EventModel → the Event collection
 export type EventModel = Model<EventDocument>;
 
 // Helper to generate a URL-safe slug from the title
@@ -106,7 +107,9 @@ const eventSchema = new Schema<EventDocument, EventModel>(
       required: true,
       validate: {
         validator: (value: string[]): boolean =>
-          Array.isArray(value) && value.length > 0 && value.every((item) => item.trim().length > 0),
+          Array.isArray(value) &&
+          value.length > 0 &&
+          value.every((item) => item.trim().length > 0),
         message: "Agenda must contain at least one non-empty item.",
       },
     },
@@ -116,18 +119,20 @@ const eventSchema = new Schema<EventDocument, EventModel>(
       required: true,
       validate: {
         validator: (value: string[]): boolean =>
-          Array.isArray(value) && value.length > 0 && value.every((item) => item.trim().length > 0),
+          Array.isArray(value) &&
+          value.length > 0 &&
+          value.every((item) => item.trim().length > 0),
         message: "Tags must contain at least one non-empty item.",
       },
     },
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 // Pre-save hook for slug generation, date/time normalization, and extra validation
-eventSchema.pre<EventDocument>("save", function preSave(next) {
+eventSchema.pre<EventDocument>("save", async function () {
   // Regenerate slug only when the title changes
   if (this.isModified("title")) {
     this.slug = slugify(this.title);
@@ -151,7 +156,8 @@ eventSchema.pre<EventDocument>("save", function preSave(next) {
   for (const field of requiredStringFields) {
     const value = this[field] as unknown;
     if (typeof value !== "string" || value.trim().length === 0) {
-      return next(new Error(`Field "${String(field)}" is required and cannot be empty.`));
+      return;
+      new Error(`Field "${String(field)}" is required and cannot be empty.`);
     }
   }
 
@@ -159,7 +165,8 @@ eventSchema.pre<EventDocument>("save", function preSave(next) {
   if (this.isModified("date")) {
     const normalizedDate = normalizeDateToIso(this.date);
     if (!normalizedDate) {
-      return next(new Error("Invalid date value; unable to convert to ISO format."));
+      return;
+      new Error("Invalid date value; unable to convert to ISO format.");
     }
     this.date = normalizedDate;
   }
@@ -168,12 +175,13 @@ eventSchema.pre<EventDocument>("save", function preSave(next) {
   if (this.isModified("time")) {
     const normalizedTime = normalizeTime(this.time);
     if (!normalizedTime) {
-      return next(new Error("Invalid time value; expected formats like '09:30' or '9:30 am'."));
+      return;
+      new Error(
+        "Invalid time value; expected formats like '09:30' or '9:30 am'."
+      );
     }
     this.time = normalizedTime;
   }
-
-  next();
 });
 
 // Use existing model in dev to avoid OverwriteModelError in Next.js hot reload
