@@ -88,11 +88,11 @@ const normalizeTime = (value: string): string | null => {
   return null;
 };
 
-const eventSchema = new Schema<EventDocument, EventModel>(
+const eventSchema = new Schema<EventDocument>(
   {
     title: { type: String, required: true, trim: true },
     // Slug is unique and generated in a pre-save hook
-    slug: { type: String, unique: true, index: true },
+    slug: { type: String, lowercase: true, trim: true },
     description: { type: String, required: true, trim: true },
     overview: { type: String, required: true, trim: true },
     image: { type: String, required: true, trim: true },
@@ -133,6 +133,7 @@ const eventSchema = new Schema<EventDocument, EventModel>(
 
 // Pre-save hook for slug generation, date/time normalization, and extra validation
 eventSchema.pre<EventDocument>("save", async function () {
+  // pre<EventDocument> says that "this" is an EventDocument
   // Regenerate slug only when the title changes
   if (this.isModified("title")) {
     this.slug = slugify(this.title);
@@ -183,6 +184,12 @@ eventSchema.pre<EventDocument>("save", async function () {
     this.time = normalizedTime;
   }
 });
+
+// index on slug for better performance
+eventSchema.index({ slug: 1 }, { unique: true });
+
+// compound index for common queries
+eventSchema.index({ date: 1, mode: 1 });
 
 // Use existing model in dev to avoid OverwriteModelError in Next.js hot reload
 export const Event: EventModel =
