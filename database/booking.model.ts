@@ -1,5 +1,10 @@
-import mongoose, { Schema, type Document, type Model, type Types } from "mongoose";
-import { Event, type EventDocument } from "./event.model";
+import mongoose, {
+  Schema,
+  type Document,
+  type Model,
+  type Types,
+} from "mongoose";
+import { Event } from "./event.model";
 
 export interface BookingAttrs {
   eventId: Types.ObjectId;
@@ -36,29 +41,29 @@ const bookingSchema = new Schema<BookingDocument, BookingModel>(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 // Pre-save hook to ensure the referenced event exists and email is valid
-bookingSchema.pre<BookingDocument>("save", async function preSave(next) {
+bookingSchema.pre<BookingDocument>("save", async function () {
   // Only check when creating or when the reference changes
   if (this.isNew || this.isModified("eventId")) {
     try {
-      const eventExists = await Event.exists({ _id: this.eventId } as Partial<EventDocument>);
+      const eventExists = await Event.exists({ _id: this.eventId });
       if (!eventExists) {
-        return next(new Error("Cannot create booking: referenced event does not exist."));
+        return new Error(
+          "Cannot create booking: referenced event does not exist."
+        );
       }
     } catch (error) {
-      return next(error as Error);
+      return error as Error;
     }
   }
 
   // Defensive email validation before persisting
   if (!EMAIL_REGEX.test(this.email)) {
-    return next(new Error("Email must be a valid email address."));
+    return new Error("Email must be a valid email address.");
   }
-
-  next();
 });
 
 // Use existing model in dev to avoid OverwriteModelError in Next.js hot reload
