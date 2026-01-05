@@ -1,10 +1,19 @@
+import { SimilarEvent } from "@/lib/actions/event.action";
 import { EventType } from "@/lib/constants";
+import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import React from "react";
 
-const EventCard = ({ title, image, slug, location, date, time }: EventType) => {
+const EventCard = ({
+  title,
+  image,
+  slug,
+  location,
+  date,
+  time,
+}: EventType | SimilarEvent) => {
   return (
-    <Link href={`/events`} id="event-card">
+    <Link href={`/events/${slug}`} id="event-card">
       <img
         src={image}
         alt={title}
@@ -20,7 +29,7 @@ const EventCard = ({ title, image, slug, location, date, time }: EventType) => {
       <div className="datetime">
         <div>
           <img src="/icons/calendar.svg" alt="date" width={14} height={14} />
-          <p>{date}</p>
+          <p>{formatDate(date)}</p>
         </div>
         <div>
           <img src="/icons/clock.svg" alt="time" width={14} height={14} />

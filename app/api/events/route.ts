@@ -27,6 +27,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let tags = JSON.parse(formData.get("tags") as string);
+    let agenda = JSON.parse(formData.get("agenda") as string);
+
     // if we have a file, convert that file into a buffer. arrayBuffer returns a promise that contains a copy of the blob data. when we work with files, we wanna get access to the blob data
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -46,7 +49,8 @@ export async function POST(req: NextRequest) {
 
     event.image = (uploadResult as { secure_url: string }).secure_url;
 
-    const createdEvent = await Event.create(event);
+    // this way, we are storing data in the right format since we are passing data properly
+    const createdEvent = await Event.create({ ...event, tags, agenda });
 
     return NextResponse.json(
       { message: "Event Created Successfully", event: createdEvent },
