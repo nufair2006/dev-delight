@@ -157,8 +157,9 @@ eventSchema.pre<EventDocument>("save", async function () {
   for (const field of requiredStringFields) {
     const value = this[field] as unknown;
     if (typeof value !== "string" || value.trim().length === 0) {
-      return;
-      new Error(`Field "${String(field)}" is required and cannot be empty.`);
+      throw new Error(
+        `Field "${String(field)}" is required and cannot be empty.`
+      );
     }
   }
 
@@ -166,8 +167,7 @@ eventSchema.pre<EventDocument>("save", async function () {
   if (this.isModified("date")) {
     const normalizedDate = normalizeDateToIso(this.date);
     if (!normalizedDate) {
-      return;
-      new Error("Invalid date value; unable to convert to ISO format.");
+      throw new Error("Invalid date value; unable to convert to ISO format.");
     }
     this.date = normalizedDate;
   }
@@ -176,8 +176,7 @@ eventSchema.pre<EventDocument>("save", async function () {
   if (this.isModified("time")) {
     const normalizedTime = normalizeTime(this.time);
     if (!normalizedTime) {
-      return;
-      new Error(
+      throw new Error(
         "Invalid time value; expected formats like '09:30' or '9:30 am'."
       );
     }
@@ -190,6 +189,8 @@ eventSchema.index({ slug: 1 }, { unique: true });
 
 // compound index for common queries
 eventSchema.index({ date: 1, mode: 1 });
+
+eventSchema.index({ tags: 1 });
 
 // Use existing model in dev to avoid OverwriteModelError in Next.js hot reload
 export const Event: EventModel =
