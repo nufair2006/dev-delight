@@ -89,10 +89,15 @@ const Page = async ({ params }: { params: Promise<{ slug: string }> }) => {
 
   const bookingsCount = 10;
 
-  const similarEvents: SimilarEvent[] = await getSimilarEventsBySlug({
-    slug,
-    limit: 5,
-  });
+  let similarEvents: SimilarEvent[] = [];
+  try {
+    similarEvents = await getSimilarEventsBySlug({
+      slug,
+      limit: 5,
+    });
+  } catch (error) {
+    console.error("Error fetching similar events:", error);
+  }
 
   return (
     <section id="event">

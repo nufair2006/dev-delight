@@ -2,6 +2,7 @@
 
 import connectDB from "@/lib/mongodb";
 import { Event, type EventDocument } from "@/database";
+import { cacheLife } from "next/cache";
 
 export type GetSimilarEventsOptions = {
   slug: string;
@@ -32,6 +33,8 @@ export const getSimilarEventsBySlug = async ({
   slug,
   limit = 3,
 }: GetSimilarEventsOptions): Promise<SimilarEvent[]> => {
+  "use cache";
+  cacheLife("hours");
   const normalizedSlug = slug.trim().toLowerCase();
 
   // Basic input validation for slug and limit

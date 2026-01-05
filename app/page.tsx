@@ -8,8 +8,20 @@ import React from "react";
 const Page = async () => {
   "use cache";
   cacheLife("hours"); // cache the page result for an hour and then revalidate it
-  const response = await fetch(`${BASE_URL}/api/events`);
-  const { events } = await response.json();
+  let events = [];
+  try {
+    if (!BASE_URL) {
+      throw new Error("BASE_URL is not configured");
+    }
+    const response = await fetch(`${BASE_URL}/api/events`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch events: ${response.statusText}`);
+    }
+    const data = await response.json();
+    events = data.events ?? [];
+  } catch (error) {
+    console.error("Error fetching events:", error);
+  }
 
   return (
     <section>
@@ -26,7 +38,7 @@ const Page = async () => {
           {events &&
             events.length > 0 &&
             events.map((e: EventDocument) => (
-              <li key={e.title}>
+              <li key={e._id.toString()}>
                 <EventCard {...e} />
               </li>
             ))}
