@@ -23,6 +23,13 @@ export interface EventDocument extends EventAttrs, Document {
   updatedAt: Date;
 }
 
+// useful for client-side rendering
+export interface StrippedEventDocument extends EventAttrs {
+  _id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // EventDocument → one event, EventModel → the Event collection
 export type EventModel = Model<EventDocument>;
 

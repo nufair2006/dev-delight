@@ -1,17 +1,9 @@
-import { SimilarEvent } from "@/lib/actions/event.action";
 import { EventType } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import React from "react";
 
-const EventCard = ({
-  title,
-  image,
-  slug,
-  location,
-  date,
-  time,
-}: EventType | SimilarEvent) => {
+const EventCard = ({ title, image, slug, location, date, time }: EventType) => {
   return (
     <Link href={`/events/${slug}`} id="event-card">
       <img

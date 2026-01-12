@@ -3,6 +3,8 @@
 import connectDB from "@/lib/mongodb";
 import { Event, type EventDocument } from "@/database";
 import { cacheLife } from "next/cache";
+import { StrippedEventDocument } from "@/database/event.model";
+import { stripEvent } from "../utils";
 
 export type GetSimilarEventsOptions = {
   slug: string;
@@ -10,37 +12,47 @@ export type GetSimilarEventsOptions = {
   limit?: number;
 };
 
-// Public shape returned to the UI for similar events
-export type SimilarEvent = Pick<
-  EventDocument,
-  | "title"
-  | "slug"
-  | "description"
-  | "overview"
-  | "image"
-  | "venue"
-  | "location"
-  | "date"
-  | "time"
-  | "mode"
-  | "audience"
-  | "organizer"
-  | "tags"
-> & { _id: string };
-
-// Server action: find events similar to a given event slug based on shared tags
-export const getSimilarEventsBySlug = async ({
-  slug,
-  limit = 3,
-}: GetSimilarEventsOptions): Promise<SimilarEvent[]> => {
-  "use cache";
-  cacheLife("hours");
+export const findEventBySlug = async (
+  slug: string
+): Promise<EventDocument | null> => {
   const normalizedSlug = slug.trim().toLowerCase();
 
   // Basic input validation for slug and limit
   if (!normalizedSlug) {
     throw new Error("A non-empty slug is required to fetch similar events.");
   }
+
+  const baseEvent = await Event.findOne({ slug: normalizedSlug })
+    .lean<EventDocument>()
+    .exec();
+
+  return baseEvent;
+};
+
+export const findEventById = async (
+  eventId: string
+): Promise<EventDocument | null> => {
+  const normalizedId = eventId.trim();
+
+  // Basic input validation for slug and limit
+  if (!normalizedId) {
+    throw new Error("A non-empty id is required to fetch similar events.");
+  }
+
+  const baseEvent = await Event.findOne({ _id: normalizedId })
+    .lean<EventDocument>()
+    .exec();
+
+  return baseEvent;
+};
+
+// Server action: find events similar to a given event slug based on shared tags
+export const getSimilarEventsBySlug = async ({
+  slug,
+  limit = 3,
+}: GetSimilarEventsOptions): Promise<StrippedEventDocument[]> => {
+  "use cache";
+  cacheLife("hours");
 
   if (!Number.isFinite(limit) || limit <= 0) {
     throw new Error("The 'limit' option must be a positive number.");
@@ -49,9 +61,7 @@ export const getSimilarEventsBySlug = async ({
   await connectDB();
 
   // Load the base event first; if it does not exist, there is nothing to recommend
-  const baseEvent = await Event.findOne({ slug: normalizedSlug })
-    .lean<EventDocument>()
-    .exec();
+  const baseEvent = await findEventBySlug(slug);
 
   if (!baseEvent) {
     return [];
@@ -73,20 +83,5 @@ export const getSimilarEventsBySlug = async ({
     .lean<Array<EventDocument>>()
     .exec();
 
-  return similar.map<SimilarEvent>((event) => ({
-    _id: event._id.toString(),
-    title: event.title,
-    slug: event.slug,
-    description: event.description,
-    overview: event.overview,
-    image: event.image,
-    venue: event.venue,
-    location: event.location,
-    date: event.date,
-    time: event.time,
-    mode: event.mode,
-    audience: event.audience,
-    organizer: event.organizer,
-    tags: event.tags,
-  }));
+  return similar.map<StrippedEventDocument>((event) => stripEvent(event));
 };

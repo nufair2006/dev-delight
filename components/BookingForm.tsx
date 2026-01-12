@@ -1,16 +1,33 @@
 "use client";
+import { bookEvent } from "@/lib/actions/booking.action";
 import React, { useState } from "react";
+import { toast } from "sonner";
+import { usePostHog } from "posthog-js/react";
 
-const BookingForm = () => {
+const BookingForm = ({ eventId, slug }: { eventId: string; slug: string }) => {
+  const posthog = usePostHog();
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    setTimeout(() => {
+    if (!email) {
+      alert("Please enter an email address.");
+      return;
+    }
+    if (!eventId) {
+      alert("Please refresh the page or try again.");
+      return;
+    }
+    const { success, error } = await bookEvent({ eventId, email });
+    if (success) {
       setSubmitted(true);
-    }, 1000);
+      posthog.capture("event_booked", { eventId, slug, email });
+      toast.success("Booking successful!");
+    } else {
+      toast.error(error || "Something went wrong. Please try again.");
+      posthog.captureException(error);
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-import { Event } from "@/database";
+import { Event, EventDocument } from "@/database";
 import connectDB from "@/lib/mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
@@ -71,7 +71,10 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   try {
     await connectDB();
-    const events = await Event.find().sort({ createdAt: -1 });
+    const events = await Event.find()
+      .sort({ createdAt: -1 })
+      .lean<EventDocument[]>()
+      .exec();
     return NextResponse.json(
       { message: "Events Fetched Successfully", events },
       { status: 200 }
